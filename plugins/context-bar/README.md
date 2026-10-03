@@ -6,29 +6,51 @@ Your Claude Code context window as a stacked bar above the prompt, one color per
 
 ## What it looks like · 效果
 
-![The bar above the prompt, with every category open under it](screenshots/overview.png)
+### In a terminal (Claude Code CLI) · 终端（Claude Code CLI）
+
+![The bar above the prompt, with every category open under it](screenshots/terminal-overview.png)
 
 **The bar and every category.** The bar sits above the prompt, one color per `/context` category: on the left the fill (42.7k of a 1M window), then the largest categories. Click the fill to open every category under the bar, largest first.
 
 **横条和全部分类。** 提示框上方的横条，每种颜色对应 `/context` 的一个分类：左边是总占用（1M 窗口里用了 42.7k），后面是占用最多的几类。点总数会在横条下方展开全部分类，从大到小排。
 
-![System tools, each built-in tool with its size and a line on what it does](screenshots/system-tools.png)
+![System tools, each built-in tool with its size and a line on what it does](screenshots/terminal-system-tools.png)
 
 **What fills a category.** Click System tools to list every built-in tool with a line on what it does. Their sizes are estimates from each tool's description (≈).
 
 **看一类里是什么。** 点 System tools，会列出每个内置工具和一句说明；大小按工具说明的长度估算（≈）。
 
-![Skills, each with its size and where it comes from](screenshots/skills.png)
+![Skills, each with its size and where it comes from](screenshots/terminal-skills.png)
 
 **Exact sizes where /context has them.** Skills, memory files and MCP tools show the sizes `/context` counts, and where each one comes from: built in, synced from claude.ai, or your own.
 
 **`/context` 有的就给准确数字。** Skills、记忆文件和 MCP 工具显示 `/context` 统计的大小，以及来源：内置、从 claude.ai 同步，或者你自己的。
 
-![The language buttons at the foot of the detail](screenshots/languages.png)
+![The language buttons at the foot of the detail](screenshots/terminal-languages.png)
 
 **Eight languages.** Pick one at the foot of the detail, or leave it on Auto to follow the language you write in.
 
 **8 种语言。** 在明细底部选择，或者保持「自动」，跟随你输入的语言。
+
+### In the Claude Code desktop app · Claude Code 桌面版
+
+![The bar above the message box in the Claude Code desktop app](screenshots/desktop-bar.png)
+
+**The bar above the message box.** The same bar in the desktop app: the fill on the left, the largest categories after it.
+
+**输入框上方的横条。** 桌面版里也是同一条横条：左边是总占用，后面是占用最多的几类。
+
+![The Context panel open beside the conversation](screenshots/desktop-panel.png)
+
+**The detail opens beside the conversation.** In the desktop app, clicking a category opens the Context panel on the right; here it shows every category.
+
+**明细在对话旁边打开。** 在桌面版里点一个分类，右侧会打开 Context 面板；图中显示的是全部分类。
+
+![The Context panel in French](screenshots/desktop-french.png)
+
+**In French.** The same panel after picking Français at its foot: titles, hints and tool notes follow the language, and category names stay as Claude Code gives them.
+
+**法语界面。** 同一个面板在底部选了 Français 之后：标题、提示和工具说明都跟着切换，分类名保持 Claude Code 给的原名。
 
 ## Install · 安装
 

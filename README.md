@@ -25,7 +25,7 @@ Start a new Claude Code session afterwards. You can also browse and install from
 | --- | --- |
 | [context-bar](plugins/context-bar) | Your context window as a stacked bar above the prompt, one color per `/context` category; click a category to see what fills it. <br> 在提示框上方用彩色堆叠条显示上下文窗口的占用，每种颜色对应 `/context` 的一个分类，点击分类可以看明细。 |
 
-![Context Bar: the bar above the prompt, with every category open under it](plugins/context-bar/screenshots/overview.png)
+![Context Bar: the bar above the prompt, with every category open under it](plugins/context-bar/screenshots/terminal-overview.png)
 
 ## Update · 更新
 
