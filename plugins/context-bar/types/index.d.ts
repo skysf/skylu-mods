@@ -66,8 +66,10 @@ declare module 'claude-code' {
       language: ContextBarLanguage
       /** Picked with the pane's buttons or `/context-bar lang`; kept in the store too. */
       languageMode: ContextBarLanguageMode
-      /** The category the detail pane shows, `*` for all of them; null when closed. */
+      /** The category the detail shows, `*` for all of them; null when hidden. */
       selected: string | null
+      /** Where the detail shows: in the band (pressed in a terminal) or in a pane. */
+      detailPlace: 'band' | 'pane'
     }
   }
 }

@@ -23,7 +23,7 @@ Start a new Claude Code session afterwards.
 ## Use · 使用
 
 - **The bar** sits above the prompt and refreshes after each turn, after tool calls and after a compaction. Used categories come first, largest first, then the free space (`░`) and the auto-compact buffer (`▒`). <br> **横条**在提示框上方，每轮对话、工具调用和压缩之后自动刷新。已用的分类排在前面、从大到小，然后是空余（`░`）和自动压缩预留（`▒`）。
-- **Details:** click a category under the bar to open a panel with what it holds: memory files, skills, MCP tools, built-in tools with a line on what each one is, and how the last request used the prompt cache. Click the total (`42.7k/1M (4%)`) or `+N` to see every category. Click the same entry again, or press Esc, to close the panel. <br> **明细：**点击横条下面的分类，会打开面板显示这一类里有什么：记忆文件、skills、MCP 工具、内置工具（每个工具附一句说明），以及上一次请求的缓存情况。点击总数或 `+N` 可以看全部分类。再点一次同一项或按 Esc 关闭面板。
+- **Details:** click a category under the bar to see what it holds: memory files, skills, MCP tools, built-in tools with a line on what each one is, and how the last request used the prompt cache. Click the total (`42.7k/1M (4%)`) or `+N` to see every category. In a terminal the detail opens right under the bar, above the prompt, at any width; click the same entry again, or its ×, to hide it. In the desktop app it opens in a panel. <br> **明细：**点击横条下面的分类，可以看这一类里有什么：记忆文件、skills、MCP 工具、内置工具（每个工具附一句说明），以及上一次请求的缓存情况。点击总数或 `+N` 可以看全部分类。在终端里，明细不论宽窄都直接展开在横条下方、提示框上方，再点一次同一项或点 × 收起；在桌面版里会打开一个面板。
 - **Clicking** works in Claude Code's fullscreen mode. Otherwise press `ctrl+x tab` to move the focus to the bar and pick an entry with the keyboard. <br> **鼠标点击**需要 Claude Code 的全屏模式；不是全屏时，按 `ctrl+x tab` 把焦点移到横条上，再用键盘选择。
 - **`/context-bar`** turns the bar off and on; `/context-bar on` and `/context-bar off` set it. The choice is remembered. <br> **`/context-bar`** 开关横条，`/context-bar on` 和 `/context-bar off` 直接设定，选择会被记住。
 - **Language:** the panel speaks English, 中文, 日本語, 한국어, Français, Español, Deutsch and Português. Pick one with the buttons at the foot of the panel or `/context-bar lang <code>` (`en`, `zh`, `ja`, `ko`, `fr`, `es`, `de`, `pt`); **Auto**, the default, follows the language you write in. The choice is remembered. <br> **语言：**面板支持 English、中文、日本語、한국어、Français、Español、Deutsch、Português。用面板底部的按钮或 `/context-bar lang <代码>` 选一种；默认的**自动**跟随你输入的语言。选择会被记住。
@@ -55,7 +55,7 @@ Context Bar 只监听下面几个 Claude Code 事件，不修改其中任何一�
 | `tool.describe` | Measures the length of each built-in tool's description; the description reaches the model unchanged. <br> 量每个内置工具说明的长度；说明原样交给模型，不做修改。 |
 | `session.measure`, `tool.call`, `session.compact`, `session.end` | Schedules a fresh reading of the context figures, nothing else. <br> 只用来安排刷新上下文数据，不做别的。 |
 | `ui.close` | Notes that its own panel was closed. <br> 记录自己的面板已关闭。 |
-| `ui.render` | Draws the bar above the prompt and the detail panel. <br> 画提示框上方的横条和明细面板。 |
+| `ui.render` | Draws the bar above the prompt, and the detail under it in a terminal or in a panel in the desktop app. <br> 画提示框上方的横条，以及明细（终端里在横条下方，桌面版里在面板中）。 |
 
 ## Requirements · 要求
 
