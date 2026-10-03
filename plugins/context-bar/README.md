@@ -39,6 +39,22 @@ Context Bar runs inside Claude Code's plugin runtime. It reads Claude Code's own
 
 Context Bar 运行在 Claude Code 的插件环境里。它读取 Claude Code 自己的上下文统计和工具说明；也会读取你发出的消息文字，但只用来判断你是不是在写中文，不保留任何内容。它在 Claude Code 本地的插件存储里记两项设置：是否显示横条、你的语言。它不读你的文件，不执行命令，也不通过网络发送任何数据。
 
+## What it hooks · 它挂了哪些钩子
+
+Context Bar listens to a few Claude Code events and changes none of them:
+
+Context Bar 只监听下面几个 Claude Code 事件，不修改其中任何一个：
+
+| Event · 事件 | What Context Bar does · 做什么 |
+| --- | --- |
+| `session.start` | Registers `/context-bar`, reads its two remembered settings and takes the first reading. <br> 注册 `/context-bar` 命令，读取记住的两项设置，取第一次数据。 |
+| `command.run` | Answers its own `/context-bar` only; every other command passes through untouched. <br> 只响应自己的 `/context-bar`，其他命令原样放行。 |
+| `prompt.submit` | Reads the prompt's text to tell its language; the prompt goes on unchanged and is not kept. <br> 读取你发出的消息文字来判断语言；消息原样发出，不保留。 |
+| `tool.describe` | Measures the length of each built-in tool's description; the description reaches the model unchanged. <br> 量每个内置工具说明的长度；说明原样交给模型，不做修改。 |
+| `session.measure`, `tool.call`, `session.compact`, `session.end` | Schedules a fresh reading of the context figures, nothing else. <br> 只用来安排刷新上下文数据，不做别的。 |
+| `ui.close` | Notes that its own panel was closed. <br> 记录自己的面板已关闭。 |
+| `ui.render` | Draws the bar above the prompt and the detail panel. <br> 画提示框上方的横条和明细面板。 |
+
 ## Requirements · 要求
 
 - Claude Code 2.1.288 or newer; update with `claude update`. <br> 需要 Claude Code 2.1.288 或更新版本，用 `claude update` 升级。

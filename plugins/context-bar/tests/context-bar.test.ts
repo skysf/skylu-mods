@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { SessionContextBreakdown, SessionUsage } from 'claude-code'
 
 import type { ContextBarCategory, ContextBarLanguage, ContextBarSnapshot, ContextBarToolSize } from '../types'
-import { allocate, formatTokens, legend } from '../hooks/bar'
+import { allocate, compactCount, legend } from '../hooks/bar'
 import { cellWidth, truncateEnd, truncateMiddle } from '../hooks/cells'
 import { ALL, LABEL_COLUMN, detailView, shortPath } from '../hooks/detail'
 import { TEXT, detectLanguage } from '../hooks/i18n'
@@ -148,10 +148,10 @@ describe('legend', () => {
   })
 
   test('tokens read short', () => {
-    expect(formatTokens(950)).toBe('950')
-    expect(formatTokens(45_210)).toBe('45.2k')
-    expect(formatTokens(200_000)).toBe('200k')
-    expect(formatTokens(1_000_000)).toBe('1M')
+    expect(compactCount(950)).toBe('950')
+    expect(compactCount(45_210)).toBe('45.2k')
+    expect(compactCount(200_000)).toBe('200k')
+    expect(compactCount(1_000_000)).toBe('1M')
     expect(legend(snap, 200).summary).toBe('45k/200k (23%)')
   })
 })

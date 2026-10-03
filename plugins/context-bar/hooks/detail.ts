@@ -13,7 +13,7 @@ import type {
   ContextBarSnapshot,
   ContextBarToolSize,
 } from '../types'
-import { formatTokens, ordered } from './bar'
+import { compactCount, ordered } from './bar'
 import { cellWidth, truncateEnd, truncateMiddle } from './cells'
 import { TEXT, type Strings } from './i18n'
 import { aboutTool } from './tool-notes'
@@ -78,7 +78,7 @@ export function detailView(input: DetailInput): DetailView {
   const category = snapshot.categories.find(c => c.name === selected)
   const tokens = category?.tokens ?? 0
   const color = category?.color ?? 'inactive'
-  const headline = text.headline(formatTokens(tokens), share(tokens, snapshot.maxTokens), formatTokens(snapshot.maxTokens))
+  const headline = text.headline(compactCount(tokens), share(tokens, snapshot.maxTokens), compactCount(snapshot.maxTokens))
   const { items, notes, isEstimate } = itemsFor(input, tokens, text)
   return { title: selected, color, headline, notes, ...layout(items, color, width, isEstimate, true) }
 }
@@ -91,7 +91,7 @@ function overview(snapshot: ContextBarSnapshot, width: number, text: Strings): D
     ...laid,
     title: text.allCategories,
     color: 'inactive',
-    headline: `${formatTokens(snapshot.totalTokens)}/${formatTokens(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`,
+    headline: `${compactCount(snapshot.totalTokens)}/${compactCount(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`,
     rows: laid.rows.map(r => ({ ...r, color: colors.get(r.name) ?? r.color, opens: r.name })),
     notes: [text.pressCategory],
   }
@@ -112,7 +112,7 @@ function itemsFor(input: DetailInput, total: number, text: Strings): Items {
     const itemized = items.reduce((sum, i) => sum + i.tokens, 0)
     return {
       items,
-      notes: [text.toolsEstimate(formatTokens(itemized), formatTokens(total)), text.toolsRest],
+      notes: [text.toolsEstimate(compactCount(itemized), compactCount(total)), text.toolsRest],
       isEstimate: true,
     }
   }
@@ -137,9 +137,9 @@ function itemsFor(input: DetailInput, total: number, text: Strings): Items {
     const free = snapshot.categories.find(c => c.kind === 'free')?.tokens ?? 0
     const threshold = details?.autoCompactThreshold
     return none(
-      text.freeLeft(formatTokens(free)),
+      text.freeLeft(compactCount(free)),
       ...(threshold
-        ? [text.autoCompact(formatTokens(threshold), formatTokens(Math.max(0, threshold - snapshot.totalTokens)))]
+        ? [text.autoCompact(compactCount(threshold), compactCount(Math.max(0, threshold - snapshot.totalTokens)))]
         : []),
     )
   }
@@ -185,7 +185,7 @@ function layout(
       key: `row-${i}`,
       name: item.name,
       bar: '█'.repeat(cells).padEnd(BAR_CELLS),
-      tokens: `${isEstimate ? '≈' : ''}${formatTokens(item.tokens)}`.padStart(7),
+      tokens: `${isEstimate ? '≈' : ''}${compactCount(item.tokens)}`.padStart(7),
       label: truncateMiddle(label, labelWidth),
       color,
       about: item.about,

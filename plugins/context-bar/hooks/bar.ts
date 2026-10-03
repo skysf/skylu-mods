@@ -51,7 +51,7 @@ export function allocate(categories: readonly ContextBarCategory[], width: numbe
 }
 
 /** 950 → "950", 45_210 → "45.2k", 200_000 → "200k", 1_000_000 → "1M". */
-export function formatTokens(n: number): string {
+export function compactCount(n: number): string {
   const scaled = (v: number, unit: string) => {
     const text = v >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString()
     return `${text}${unit}`
@@ -71,12 +71,12 @@ export function legend(
   snapshot: ContextBarSnapshot,
   width: number,
 ): { summary: string; items: LegendItem[]; hidden: number } {
-  const summary = `${formatTokens(snapshot.totalTokens)}/${formatTokens(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`
+  const summary = `${compactCount(snapshot.totalTokens)}/${compactCount(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`
   const all = ordered(snapshot.categories)
   const items: LegendItem[] = []
   let used = summary.length
   for (const [i, c] of all.entries()) {
-    const label = `${c.name} ${formatTokens(c.tokens)}`
+    const label = `${c.name} ${compactCount(c.tokens)}`
     const cost = 2 + 2 + label.length // "  " + glyph + " " + label
     const left = all.length - i - 1
     const reserve = left > 0 ? ` +${left}`.length : 0
