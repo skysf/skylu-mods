@@ -1,0 +1,16 @@
+{
+  "name": "skylu",
+  "description": "Mods and plugins for Claude Code by skylu.",
+  "owner": {
+    "name": "skylu",
+    "url": "https://www.skylu.ai"
+  },
+  "plugins": [
+    {
+      "name": "context-bar",
+      "source": "./plugins/context-bar",
+      "category": "productivity",
+      "tags": ["context", "tokens", "ui"]
+    }
+  ]
+}

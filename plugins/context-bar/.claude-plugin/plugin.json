@@ -1,0 +1,17 @@
+{
+  "name": "context-bar",
+  "displayName": "Context Bar",
+  "version": "0.1.0",
+  "description": "Your context window as a stacked bar above the prompt, one color per /context category. Click a category to see what fills it; /context-bar toggles the bar.",
+  "author": {
+    "name": "skylu",
+    "url": "https://www.skylu.ai"
+  },
+  "homepage": "https://github.com/skysf/skylu-mods/tree/main/plugins/context-bar",
+  "repository": "https://github.com/skysf/skylu-mods",
+  "license": "MIT",
+  "keywords": ["context", "context-window", "tokens", "status", "mod"],
+  "documentationUrl": "https://github.com/skysf/skylu-mods/tree/main/plugins/context-bar#readme",
+  "supportUrl": "https://github.com/skysf/skylu-mods/issues",
+  "types": "./types/index.d.ts"
+}

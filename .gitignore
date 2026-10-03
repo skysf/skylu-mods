@@ -1,0 +1,11 @@
+# Written by Claude Code each time it loads a mod: this machine's API, built-in
+# tool and MCP tool types. Never part of a plugin.
+.claude-plugin/types/
+
+# System files (Anthropic's plugin directory refuses them in a plugin folder)
+.DS_Store
+Thumbs.db
+desktop.ini
+__MACOSX/
+
+node_modules/
