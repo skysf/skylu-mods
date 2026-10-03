@@ -426,10 +426,9 @@ for (const surface of ['terminal', 'desktop'] as const) {
 }
 
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(surface + ': pressing a legend entry opens its detail pane, pressing it again closes it', async ($, on) => {
+  test(surface + ': pressing a legend entry shows its detail, pressing it again hides it', async ($, on) => {
     mock.store(on)
     on('session.usage', () => ({ value: USAGE }))
-    // The engine describing its tools, as it does before the first request.
     on('tool.describe', ($, e) => ({ description: e.description }))
     on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Box' as const }))
     const opened: string[] = []
@@ -450,40 +449,53 @@ for (const surface of ['terminal', 'desktop'] as const) {
 
     await $.command.run(RUN('on'))
     const band = await $.ui.mount({ plugin: 'context-bar', surface, component: 'AbovePrompt', props: BAND(120) })
-
     await band.press({ key: 'cat:System tools' })
-    expect(opened).toEqual(['context-bar-detail|Context · System tools'])
 
-    const pane = await $.ui.mount({
-      plugin: 'context-bar',
-      surface,
-      component: 'Pane',
-      requestId: 'context-bar-detail',
-      props: PANE_PROPS(60),
-    })
-    expect((await pane.find({ type: 'Text', text: 'System tools' }))?.props.bold).toBe(true)
-    expect(await pane.find({ type: 'Text', text: 'Bash' })).toBeDefined()
-    expect(await pane.find({ type: 'Text', text: /≈296/ })).toBeDefined()
-    // No prompt yet to tell the language from: English.
-    expect(await pane.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
-    expect(await pane.find({ type: 'Text', text: /Runs shell commands/ })).toBeDefined()
-    expect(await pane.find({ type: 'Text', text: 'Monitor' })).toBeUndefined()
-    expect(await pane.find({ type: 'Text', text: /mcp__docs/ })).toBeUndefined()
+    // A terminal shows it in the band, framed under the bar; elsewhere a pane opens.
+    const detail =
+      surface === 'terminal'
+        ? band
+        : await $.ui.mount({ plugin: 'context-bar', surface, component: 'Pane', requestId: 'context-bar-detail', props: PANE_PROPS(60) })
+    if (surface === 'terminal') {
+      expect(opened).toEqual([])
+      expect((await band.find({ type: 'Box', key: 'detail' }))?.props.borderStyle).toBe('round')
+    } else {
+      expect(opened).toEqual(['context-bar-detail|Context · System tools'])
+    }
+    expect((await detail.find({ type: 'Text', text: 'System tools' }))?.props.bold).toBe(true)
+    expect(await detail.find({ type: 'Text', text: 'Bash' })).toBeDefined()
+    expect(await detail.find({ type: 'Text', text: /≈296/ })).toBeDefined()
+    expect(await detail.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
+    expect(await detail.find({ type: 'Text', text: 'Monitor' })).toBeUndefined()
+    expect(await detail.find({ type: 'Text', text: /mcp__docs/ })).toBeUndefined()
 
     // From a category back to all of them, then into another one.
-    await pane.press({ key: 'all' })
-    expect(await pane.find({ key: 'open:Memory files' })).toBeDefined()
-    await pane.press({ key: 'open:Memory files' })
-    expect(await pane.find({ type: 'Text', text: /CLAUDE\.md/ })).toBeDefined()
+    await detail.press({ key: 'all' })
+    expect(await detail.find({ key: 'open:Memory files' })).toBeDefined()
+    await detail.press({ key: 'open:Memory files' })
+    expect(await detail.find({ type: 'Text', text: /CLAUDE\.md/ })).toBeDefined()
 
+    // Pressing the shown entry again hides it.
     await band.press({ key: 'cat:Memory files' })
-    expect(closed).toEqual(['context-bar-detail'])
-    expect(await pane.find({ type: 'Text', text: 'No context figures yet.' })).toBeDefined()
+    if (surface === 'terminal') {
+      expect(await band.find({ type: 'Box', key: 'detail' })).toBeUndefined()
+      expect(closed).toEqual([])
+      // The × in the band hides it too.
+      await band.press({ key: 'cat:System tools' })
+      expect(await band.find({ type: 'Box', key: 'detail' })).toBeDefined()
+      await band.press({ key: 'close' })
+      expect(await band.find({ type: 'Box', key: 'detail' })).toBeUndefined()
+    } else {
+      expect(closed).toEqual(['context-bar-detail'])
+      expect(await detail.find({ type: 'Text', text: 'No context figures yet.' })).toBeDefined()
+      // A pane has no × of its own drawing: the surface draws the close control.
+      expect(await detail.find({ key: 'close' })).toBeUndefined()
+    }
   })
 }
 
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(surface + ": the pane follows the language of the person's prompts", async ($, on) => {
+  test(surface + ': the detail follows the language of the person\'s prompts', async ($, on) => {
     mock.store(on)
     on('session.usage', () => ({ value: USAGE }))
     on('tool.describe', ($, e) => ({ description: e.description }))
@@ -498,29 +510,26 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await $.command.run(RUN('on'))
     const band = await $.ui.mount({ plugin: 'context-bar', surface, component: 'AbovePrompt', props: BAND(120) })
     await band.press({ key: 'cat:System tools' })
-    const pane = await $.ui.mount({
-      plugin: 'context-bar',
-      surface,
-      component: 'Pane',
-      requestId: 'context-bar-detail',
-      props: PANE_PROPS(80),
-    })
+    const detail =
+      surface === 'terminal'
+        ? band
+        : await $.ui.mount({ plugin: 'context-bar', surface, component: 'Pane', requestId: 'context-bar-detail', props: PANE_PROPS(80) })
 
     // Nothing said yet: English.
-    expect(await pane.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
+    expect(await detail.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
 
     await say('给每个工具加一句说明')
-    expect(await pane.find({ type: 'Text', text: /把 HTML 发布成 claude\.ai 网页/ })).toBeDefined()
-    expect(await pane.find({ type: 'Button', key: 'all' })).toMatchObject({ text: '‹ 全部分类' })
+    expect(await detail.find({ type: 'Text', text: /把 HTML 发布成 claude\.ai 网页/ })).toBeDefined()
+    expect(await detail.find({ type: 'Button', key: 'all' })).toMatchObject({ text: '‹ 全部分类' })
 
     // Too short to tell, and words that are not the person's: no change.
     await say('ok')
     await say('please summarize the build log for me', 'peer')
-    expect(await pane.find({ type: 'Text', text: /把 HTML 发布成 claude\.ai 网页/ })).toBeDefined()
+    expect(await detail.find({ type: 'Text', text: /把 HTML 发布成 claude\.ai 网页/ })).toBeDefined()
 
     await say('make the notes shorter please')
-    expect(await pane.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
-    expect(await pane.find({ type: 'Button', key: 'all' })).toMatchObject({ text: '‹ All categories' })
+    expect(await detail.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
+    expect(await detail.find({ type: 'Button', key: 'all' })).toMatchObject({ text: '‹ All categories' })
   })
 }
 
@@ -539,22 +548,19 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await $.command.run(RUN('on'))
     const band = await $.ui.mount({ plugin: 'context-bar', surface, component: 'AbovePrompt', props: BAND(120) })
     await band.press({ key: 'cat:System tools' })
-    const pane = await $.ui.mount({
-      plugin: 'context-bar',
-      surface,
-      component: 'Pane',
-      requestId: 'context-bar-detail',
-      props: PANE_PROPS(80),
-    })
-    const shows = async (pattern: RegExp) => (await pane.find({ type: 'Text', text: pattern })) !== undefined
+    const detail =
+      surface === 'terminal'
+        ? band
+        : await $.ui.mount({ plugin: 'context-bar', surface, component: 'Pane', requestId: 'context-bar-detail', props: PANE_PROPS(80) })
+    const shows = async (pattern: RegExp) => (await detail.find({ type: 'Text', text: pattern })) !== undefined
 
     // Every language has a button, in its own name; Auto is picked at first.
-    for (const code of LANGUAGES) expect(await pane.find({ key: 'lang:' + code })).toBeDefined()
-    expect((await pane.find({ key: 'lang:auto' }))?.text).toBe('● Auto')
+    for (const code of LANGUAGES) expect(await detail.find({ key: 'lang:' + code })).toBeDefined()
+    expect((await detail.find({ key: 'lang:auto' }))?.text).toBe('● Auto')
 
-    await pane.press({ key: 'lang:fr' })
+    await detail.press({ key: 'lang:fr' })
     expect(await shows(/Publie du HTML sur claude\.ai/)).toBe(true)
-    expect((await pane.find({ key: 'lang:fr' }))?.text).toBe('● Français')
+    expect((await detail.find({ key: 'lang:fr' }))?.text).toBe('● Français')
 
     // Picked: a Chinese prompt changes nothing.
     await say('给每个工具加一句说明')
@@ -564,9 +570,9 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(reply.text).toBe('Context bar language: 日本語.')
     expect(await shows(/HTML を claude\.ai で公開/)).toBe(true)
 
-    // Back to Auto: the Chinese prompt sent while French was picked was never
-    // read, so the pane is back to the language seen before (English)...
-    await pane.press({ key: 'lang:auto' })
+    // Back to Auto: the Chinese prompt sent while a language was picked was
+    // never read, so the detail is back to the language seen before (English)...
+    await detail.press({ key: 'lang:auto' })
     expect(await shows(/Publishes HTML to claude\.ai/)).toBe(true)
     // ...and the prompts lead again.
     await say('给每个工具加一句说明')
