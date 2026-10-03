@@ -4,10 +4,31 @@ Your Claude Code context window as a stacked bar above the prompt, one color per
 
 在 Claude Code 的提示框上方，用一条彩色堆叠条显示上下文窗口的占用。每种颜色对应 `/context` 里的一个分类，一眼就能看出窗口用了多少、被什么占着。点击分类会打开一个面板，显示这一类里具体有什么。
 
-```text
-████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒▒▒▒
-42.7k/1M (4%)  █ System tools 29k  █ Skills 5.8k  █ MCP server instructions 2.8k +3
-```
+## What it looks like · 效果
+
+![The bar above the prompt, with every category open under it](screenshots/overview.png)
+
+**The bar and every category.** The bar sits above the prompt, one color per `/context` category: on the left the fill (42.7k of a 1M window), then the largest categories. Click the fill to open every category under the bar, largest first.
+
+**横条和全部分类。** 提示框上方的横条，每种颜色对应 `/context` 的一个分类：左边是总占用（1M 窗口里用了 42.7k），后面是占用最多的几类。点总数会在横条下方展开全部分类，从大到小排。
+
+![System tools, each built-in tool with its size and a line on what it does](screenshots/system-tools.png)
+
+**What fills a category.** Click System tools to list every built-in tool with a line on what it does. Their sizes are estimates from each tool's description (≈).
+
+**看一类里是什么。** 点 System tools，会列出每个内置工具和一句说明；大小按工具说明的长度估算（≈）。
+
+![Skills, each with its size and where it comes from](screenshots/skills.png)
+
+**Exact sizes where /context has them.** Skills, memory files and MCP tools show the sizes `/context` counts, and where each one comes from: built in, synced from claude.ai, or your own.
+
+**`/context` 有的就给准确数字。** Skills、记忆文件和 MCP 工具显示 `/context` 统计的大小，以及来源：内置、从 claude.ai 同步，或者你自己的。
+
+![The language buttons at the foot of the detail](screenshots/languages.png)
+
+**Eight languages.** Pick one at the foot of the detail, or leave it on Auto to follow the language you write in.
+
+**8 种语言。** 在明细底部选择，或者保持「自动」，跟随你输入的语言。
 
 ## Install · 安装
 
