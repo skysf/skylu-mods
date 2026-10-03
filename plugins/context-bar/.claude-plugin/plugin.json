@@ -1,7 +1,7 @@
 {
   "name": "context-bar",
   "displayName": "Context Bar",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Your context window as a stacked bar above the prompt, one color per /context category. Click a category to see what fills it; /context-bar toggles the bar.",
   "author": {
     "name": "skylu",
