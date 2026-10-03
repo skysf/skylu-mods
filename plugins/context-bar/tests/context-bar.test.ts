@@ -4,9 +4,9 @@ import type { SessionContextBreakdown, SessionUsage } from 'claude-code'
 import type { ContextBarCategory, ContextBarLanguage, ContextBarSnapshot, ContextBarToolSize } from '../types'
 import { allocate, compactCount, legend } from '../hooks/bar'
 import { cellWidth, truncateEnd, truncateMiddle } from '../hooks/cells'
-import { ALL, LABEL_COLUMN, detailView, shortPath } from '../hooks/detail'
-import { TEXT, detectLanguage } from '../hooks/i18n'
-import { TOOL_NOTES, aboutTool, firstSentence } from '../hooks/tool-notes'
+import { ALL, detailView, shortPath } from '../hooks/detail'
+import { LANGUAGES, PACKS, TEXT, detectLanguage, parseLanguageMode } from '../hooks/i18n'
+import { aboutTool, firstSentence } from '../hooks/tool-notes'
 import { toDetails, toSnapshot } from '../hooks/snapshot'
 
 const SYSTEM: ContextBarCategory = { name: 'System prompt', tokens: 3_000, color: 'promptBorder', kind: 'used' }
@@ -193,7 +193,7 @@ describe('detail pane content', () => {
     const free = view('Free space', TOOL_SIZES, 60, 'zh')
     expect(free.notes).toEqual(['还剩 122k，用完窗口就满了。', '到 167k 时自动压缩，还差 122k。'])
     const messages = view('Messages', TOOL_SIZES, 60, 'zh')
-    expect(messages.rows.map(r => r.name)).toEqual(['从 prompt 缓存读取', '写入 prompt 缓存', '没走缓存'])
+    expect(messages.rows.map(r => r.name)).toEqual(['缓存读取', '缓存写入', '未走缓存'])
     expect(view('Memory files', TOOL_SIZES, 60, 'zh').rows[0]?.label).toBe('~/.claude/CLAUDE.md  User')
   })
 
@@ -211,8 +211,8 @@ describe('detail pane content', () => {
   test('messages: the last request split by the prompt cache', () => {
     const v = view('Messages', TOOL_SIZES, 60)
     expect(v.rows.map(r => [r.name, r.tokens.trim()])).toEqual([
-      ['Read from the prompt cache', '40k'],
-      ['Written to the prompt cache', '5k'],
+      ['Cache read', '40k'],
+      ['Cache write', '5k'],
       ['Not cached', '40'],
     ])
   })
@@ -231,6 +231,23 @@ describe('detail pane content', () => {
     const v = view(ALL, TOOL_SIZES, 60)
     expect(v.rows.map(r => r.opens)).toEqual(BY_SIZE.map(c => c.name))
     expect(v.rows.map(r => r.color)).toEqual(BY_SIZE.map(c => c.color))
+  })
+
+  test('overview: bars against the largest used category, none for the free space', () => {
+    const bars = Object.fromEntries(view(ALL, TOOL_SIZES, 60).rows.map(r => [r.name, r.bar]))
+    // Messages 30k is the largest used: a full bar; System tools 12k: 4 of 10.
+    expect(bars['Messages']).toBe('██████████')
+    expect(bars['System tools']).toBe('████      ')
+    expect(bars['Memory files']).toBe('█         ')
+    expect(bars['Free space']).toBe('          ')
+    expect(bars['Autocompact buffer']).toBe('          ')
+  })
+
+  test('bars get shorter in a narrow pane, leaving the labels room', () => {
+    expect(view('System tools', TOOL_SIZES, 60).labelColumn).toBe(19)
+    expect(view('System tools', TOOL_SIZES, 45).labelColumn).toBe(15)
+    expect(view('System tools', TOOL_SIZES, 36).labelColumn).toBe(13)
+    expect(view('Messages', TOOL_SIZES, 36, 'zh').rows.map(r => r.label)).toEqual(['缓存读取', '缓存写入', '未走缓存'])
   })
 
   test('labels never run past the pane', () => {
@@ -264,7 +281,7 @@ describe('detail pane content', () => {
       '读文件，也能看图片和 PDF',
     ])
     for (const row of v.rows) {
-      expect(LABEL_COLUMN + v.nameWidth + 2 + cellWidth(row.about ?? '')).toBeLessThanOrEqual(68)
+      expect(v.labelColumn + v.nameWidth + 2 + cellWidth(row.about ?? '')).toBeLessThanOrEqual(68)
     }
   })
 
@@ -272,18 +289,23 @@ describe('detail pane content', () => {
     const v = detailView({ selected: 'System tools', snapshot: snap, details, toolSizes: SESSION_TOOLS, width: 50, language: 'zh' })
     expect(v.aboutPlacement).toBe('below')
     for (const row of v.rows) {
-      expect(LABEL_COLUMN + cellWidth(row.about ?? '')).toBeLessThanOrEqual(50)
+      expect(v.labelColumn + cellWidth(row.about ?? '')).toBeLessThanOrEqual(50)
     }
     expect(v.rows[0]?.about).toBe('把 HTML 发布成 claude.ai 网页')
   })
 })
 
 describe('tool notes', () => {
-  test('every written note, in both languages, fits beside the names in a 68-column pane', () => {
-    for (const [name, note] of Object.entries(TOOL_NOTES)) {
-      for (const language of ['zh', 'en'] as const) {
-        expect(note[language].trim(), name + ' (' + language + ') is empty').not.toBe('')
-        expect(cellWidth(note[language]), name + ' (' + language + '): ' + note[language]).toBeLessThanOrEqual(32)
+  test('every language has a note for every tool, each fitting beside the names in a 68-column pane', () => {
+    const tools = Object.keys(PACKS.en.notes)
+    expect(tools.length).toBeGreaterThanOrEqual(40)
+    for (const language of LANGUAGES) {
+      const notes = PACKS[language].notes
+      expect(Object.keys(notes).sort(), language + ' lists other tools than English').toEqual([...tools].sort())
+      for (const tool of tools) {
+        const note = notes[tool] ?? ''
+        expect(note.trim(), tool + ' (' + language + ') is empty').not.toBe('')
+        expect(cellWidth(note), tool + ' (' + language + '): ' + note).toBeLessThanOrEqual(32)
       }
     }
   })
@@ -323,11 +345,28 @@ describe('the person\'s language', () => {
     expect(detectLanguage('看下 `const x = foo(bar, baz, qux)` 这行')).toBe('zh')
   })
 
-  test('English, and every language that is not Chinese', () => {
+  test('Japanese by its kana, Korean by Hangul', () => {
+    expect(detectLanguage('このバーをもっと小さくして')).toBe('ja')
+    expect(detectLanguage('設定を変更してください')).toBe('ja')
+    expect(detectLanguage('이 막대를 더 작게 만들어 주세요')).toBe('ko')
+  })
+
+  test('Latin-script languages by their common words and letters', () => {
     expect(detectLanguage('create a mod that draws my context window as a stacked bar')).toBe('en')
-    expect(detectLanguage('Mach das bitte kleiner und schneller')).toBe('en')
-    expect(detectLanguage('このバーをもっと小さくして')).toBe('en')
-    expect(detectLanguage('이 막대를 더 작게 만들어 주세요')).toBe('en')
+    expect(detectLanguage('make the notes shorter please')).toBe('en')
+    expect(detectLanguage('Peux-tu rendre la barre plus petite et plus claire ?')).toBe('fr')
+    expect(detectLanguage('¿Puedes hacer la barra más pequeña y más clara?')).toBe('es')
+    expect(detectLanguage('Mach das bitte kleiner und schneller')).toBe('de')
+    expect(detectLanguage('Você pode deixar a barra menor e mais clara?')).toBe('pt')
+  })
+
+  test('a language name, code or word picks it for /context-bar lang', () => {
+    expect(parseLanguageMode('ja')).toBe('ja')
+    expect(parseLanguageMode('Français')).toBe('fr')
+    expect(parseLanguageMode('spanish')).toBe('es')
+    expect(parseLanguageMode('中文')).toBe('zh')
+    expect(parseLanguageMode('AUTO')).toBe('auto')
+    expect(parseLanguageMode('klingon')).toBeUndefined()
   })
 
   test('too little to tell keeps the last one', () => {
@@ -341,8 +380,12 @@ describe('the person\'s language', () => {
     expect(detectLanguage('这个报错怎么回事\n' + log)).toBeUndefined()
   })
 
-  test('both languages have every line', () => {
-    expect(Object.keys(TEXT.zh).sort()).toEqual(Object.keys(TEXT.en).sort())
+  test('every language has every line, and a name of its own', () => {
+    for (const language of LANGUAGES) {
+      expect(Object.keys(TEXT[language]).sort(), language).toEqual(Object.keys(TEXT.en).sort())
+      expect(PACKS[language].name.trim()).not.toBe('')
+    }
+    expect(new Set(LANGUAGES.map(l => PACKS[l].name)).size).toBe(LANGUAGES.length)
   })
 })
 
@@ -478,5 +521,59 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await say('make the notes shorter please')
     expect(await pane.find({ type: 'Text', text: /Publishes HTML to claude\.ai/ })).toBeDefined()
     expect(await pane.find({ type: 'Button', key: 'all' })).toMatchObject({ text: '‹ All categories' })
+  })
+}
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(surface + ': a picked language holds, prompts unread; Auto follows them again', async ($, on) => {
+    mock.store(on)
+    on('session.usage', () => ({ value: USAGE }))
+    on('tool.describe', ($, e) => ({ description: e.description }))
+    on('prompt.submit', ($, e) => ({ text: e.text }))
+    on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Box' as const }))
+    on('ui.open', () => ({ value: { isPlaced: true as const } }))
+    on('ui.close', () => ({ value: undefined }))
+    const say = (text: string) => $.prompt.submit({ text, wait: false, origin: { kind: 'composer' } })
+
+    await $.tool.describe({ tool: 'Artifact', description: 'a'.repeat(18_000), provider: ENGINE })
+    await $.command.run(RUN('on'))
+    const band = await $.ui.mount({ plugin: 'context-bar', surface, component: 'AbovePrompt', props: BAND(120) })
+    await band.press({ key: 'cat:System tools' })
+    const pane = await $.ui.mount({
+      plugin: 'context-bar',
+      surface,
+      component: 'Pane',
+      requestId: 'context-bar-detail',
+      props: PANE_PROPS(80),
+    })
+    const shows = async (pattern: RegExp) => (await pane.find({ type: 'Text', text: pattern })) !== undefined
+
+    // Every language has a button, in its own name; Auto is picked at first.
+    for (const code of LANGUAGES) expect(await pane.find({ key: 'lang:' + code })).toBeDefined()
+    expect((await pane.find({ key: 'lang:auto' }))?.text).toBe('● Auto')
+
+    await pane.press({ key: 'lang:fr' })
+    expect(await shows(/Publie du HTML sur claude\.ai/)).toBe(true)
+    expect((await pane.find({ key: 'lang:fr' }))?.text).toBe('● Français')
+
+    // Picked: a Chinese prompt changes nothing.
+    await say('给每个工具加一句说明')
+    expect(await shows(/Publie du HTML sur claude\.ai/)).toBe(true)
+
+    const reply = await $.command.run(RUN('lang ja'))
+    expect(reply.text).toBe('Context bar language: 日本語.')
+    expect(await shows(/HTML を claude\.ai で公開/)).toBe(true)
+
+    // Back to Auto: the Chinese prompt sent while French was picked was never
+    // read, so the pane is back to the language seen before (English)...
+    await pane.press({ key: 'lang:auto' })
+    expect(await shows(/Publishes HTML to claude\.ai/)).toBe(true)
+    // ...and the prompts lead again.
+    await say('给每个工具加一句说明')
+    expect(await shows(/把 HTML 发布成 claude\.ai 网页/)).toBe(true)
+    await say('Peux-tu rendre la barre plus petite et plus claire ?')
+    expect(await shows(/Publie du HTML sur claude\.ai/)).toBe(true)
+
+    expect((await $.command.run(RUN('lang klingon'))).text).toContain('Unknown language')
   })
 }

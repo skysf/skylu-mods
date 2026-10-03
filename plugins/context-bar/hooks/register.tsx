@@ -4,8 +4,11 @@
 //
 // Pressing a legend entry opens a pane with what that category holds (files,
 // skills, tools, ...); pressing the fill (`42k/1M (4%)`) or `+N` opens every
-// category. Pressing the same entry again, or Esc, closes it. The pane writes
-// in the person's language: Chinese when their prompts are, else English.
+// category. Pressing the same entry again, or Esc, closes it.
+//
+// The pane writes in one of eight languages: the one picked with the buttons
+// at its foot or `/context-bar lang <code>`, or under Auto (the default) the
+// one the person's prompts are written in. Only Auto reads the prompts.
 //
 // The figures are /context's own breakdown (`$.session.usage` with
 // `breakdown: 'summary'`: estimated locally, no token-count requests), taken
@@ -17,8 +20,9 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
 import { allocate, glyphFor, legend } from './bar'
-import { ALL, LABEL_COLUMN, detailView, titleFor } from './detail'
-import { TEXT, detectLanguage } from './i18n'
+import type { ContextBarLanguageMode } from '../types'
+import { ALL, detailView, titleFor } from './detail'
+import { LANGUAGES, PACKS, TEXT, detectLanguage, effectiveLanguage, parseLanguageMode } from './i18n'
 import { toDetails, toSnapshot } from './snapshot'
 import { firstSentence } from './tool-notes'
 
@@ -28,11 +32,14 @@ const isShown = atom({ plugin: 'context-bar', key: 'isShown' } as const, true)
 const selected = atom({ plugin: 'context-bar', key: 'selected' } as const, null)
 const toolSizes = atom({ plugin: 'context-bar', key: 'toolSizes' } as const, {})
 const language = atom({ plugin: 'context-bar', key: 'language' } as const, 'en')
+const languageMode = atom({ plugin: 'context-bar', key: 'languageMode' } as const, 'auto')
 
 const COMMAND = 'context-bar'
 const PANE = 'context-bar-detail'
 const STORE_KEY = 'isShown'
 const LANGUAGE_KEY = 'language'
+const LANGUAGE_MODE_KEY = 'languageMode'
+const MODES: readonly ContextBarLanguageMode[] = ['auto', ...LANGUAGES]
 /** Whose prompts tell the language: the person's own, typed or sent from a phone or an SDK host. */
 const PERSON = new Set(['composer', 'bridge', 'sdk'])
 const TOOL_REFRESH_MS = 2_000
@@ -90,18 +97,33 @@ async function closeDetail($: EngineInterface) {
   await $.ui.close({ id: PANE })
 }
 
+/** Picks the pane's language, or Auto; remembered across sessions. */
+async function setLanguageMode($: EngineInterface, mode: ContextBarLanguageMode) {
+  await update($, languageMode, () => mode)
+  await $.store.set(LANGUAGE_MODE_KEY, mode)
+}
+
+function modeName(mode: ContextBarLanguageMode): string {
+  return mode === 'auto' ? 'Auto (follows the language you write in)' : PACKS[mode].name
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: COMMAND,
       description: 'Toggle the context-window bar above the prompt',
-      argumentHint: '[on|off]',
+      argumentHint: '[on|off|lang <auto|en|zh|ja|ko|fr|es|de|pt>]',
       immediate: true,
     })
     const stored = await $.store.get(STORE_KEY)
     if (typeof stored === 'boolean') await update($, isShown, () => stored)
     const storedLanguage = await $.store.get(LANGUAGE_KEY)
-    if (storedLanguage === 'zh' || storedLanguage === 'en') await update($, language, () => storedLanguage)
+    if (LANGUAGES.some(code => code === storedLanguage)) {
+      await update($, language, () => LANGUAGES.find(code => code === storedLanguage) ?? 'en')
+    }
+    const storedMode = await $.store.get(LANGUAGE_MODE_KEY)
+    const mode = MODES.find(m => m === storedMode)
+    if (mode !== undefined) await update($, languageMode, () => mode)
     // Loaded after the tools were described (a reload into a running session),
     // or what was kept predates the summaries: have the engine describe them
     // again on the next request. The answers do not change, so the prompt and
@@ -116,9 +138,20 @@ export const register: Register = on => {
 
   on('command.run', { command: COMMAND }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
+    const [verb, word] = arg.split(/\s+/)
+    if (verb === 'lang' || verb === 'language') {
+      const choices = 'auto, ' + LANGUAGES.join(', ')
+      if (word === undefined || word === '') {
+        return { text: 'Context bar language: ' + modeName(await read($, languageMode)) + '. Choose with /context-bar lang <' + choices + '>.' }
+      }
+      const mode = parseLanguageMode(word)
+      if (mode === undefined) return { text: 'Unknown language "' + word + '". Choose one of: ' + choices + '.' }
+      await setLanguageMode($, mode)
+      return { text: 'Context bar language: ' + modeName(mode) + '.' }
+    }
     const current = await read($, isShown)
     const want = arg === '' ? !current : arg === 'on' ? true : arg === 'off' ? false : null
-    if (want === null) return { text: 'Usage: /context-bar [on|off]' }
+    if (want === null) return { text: 'Usage: /context-bar [on|off|lang <code>]' }
 
     await update($, isShown, () => want)
     await $.store.set(STORE_KEY, want)
@@ -128,10 +161,12 @@ export const register: Register = on => {
     return { text: want ? 'Context bar on.' : 'Context bar off.' }
   })
 
-  // The pane follows the language of the person's prompts; one too short to
-  // tell (`ok`, `/context-bar`) keeps the last. Read, never changed.
+  // Under Auto the pane follows the language of the person's prompts; one too
+  // short to tell (`ok`, `/context-bar`) keeps the last. A picked language
+  // leaves the prompts unread. Read, never changed.
   on('prompt.submit', async ($, e, next) => {
-    const said = PERSON.has(e.origin.kind) ? detectLanguage(e.text) : undefined
+    const isAuto = (await read($, languageMode)) === 'auto'
+    const said = isAuto && PERSON.has(e.origin.kind) ? detectLanguage(e.text) : undefined
     if (said !== undefined && said !== (await read($, language))) {
       try {
         await update($, language, () => said)
@@ -236,7 +271,8 @@ export const register: Register = on => {
     const { Box, Button, Text } = $.ui.resolve(e)
     const name = await read($, selected)
     const snap = await read($, snapshot)
-    const lang = await read($, language)
+    const mode = await read($, languageMode)
+    const lang = effectiveLanguage(mode, await read($, language))
     if (name === null || snap === null) return <Text dimColor>{TEXT[lang].noFigures}</Text>
 
     const view = detailView({
@@ -261,7 +297,7 @@ export const register: Register = on => {
             const about = row.about
             const label =
               target === undefined ? (
-                <Text dimColor={about === undefined}>{row.label}</Text>
+                <Text>{row.label}</Text>
               ) : (
                 <Button key={'open:' + target} label={row.label} plain onPress={() => showDetail($, target)} />
               )
@@ -280,7 +316,7 @@ export const register: Register = on => {
                 {about !== undefined && view.aboutPlacement === 'inline' && <Text dimColor>{'  ' + about}</Text>}
               </Box>,
               about !== undefined && view.aboutPlacement === 'below' && (
-                <Box marginLeft={LABEL_COLUMN}>
+                <Box marginLeft={view.labelColumn}>
                   <Text dimColor>{about}</Text>
                 </Box>
               ),
@@ -300,6 +336,23 @@ export const register: Register = on => {
             <Button key="all" label={TEXT[lang].back} plain dimColor onPress={() => showDetail($, ALL)} />
           </Box>
         )}
+        <Box key="languages" flexDirection="row" flexWrap="wrap" marginTop={1}>
+          <Text dimColor>{TEXT[lang].language + ':'}</Text>
+          {MODES.map(choice => {
+            const isPicked = choice === mode
+            const label = (isPicked ? '● ' : '') + (choice === 'auto' ? TEXT[lang].auto : PACKS[choice].name)
+            return [
+              <Text>{'  '}</Text>,
+              <Button
+                key={'lang:' + choice}
+                label={label}
+                plain
+                dimColor={!isPicked}
+                onPress={() => setLanguageMode($, choice)}
+              />,
+            ]
+          })}
+        </Box>
       </Box>
     )
   })
