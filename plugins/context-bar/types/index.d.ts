@@ -1,7 +1,10 @@
 export type ContextBarKind = 'used' | 'free' | 'buffer'
 
-/** The language the pane writes in: the person's, Chinese or else English. */
-export type ContextBarLanguage = 'zh' | 'en'
+/** A language the pane writes in. */
+export type ContextBarLanguage = 'en' | 'zh' | 'ja' | 'ko' | 'fr' | 'es' | 'de' | 'pt'
+
+/** The language picked for the pane, or Auto: the language the person writes in. */
+export type ContextBarLanguageMode = 'auto' | ContextBarLanguage
 
 /** One /context row as the bar draws it: deferred rows are left out. */
 export type ContextBarCategory = {
@@ -59,8 +62,10 @@ declare module 'claude-code' {
       details: ContextBarDetails | null
       /** By tool name, from `tool.describe`; kept across reloads. */
       toolSizes: Record<string, ContextBarToolSize>
-      /** Taken from the person's prompts; kept across sessions in the store too. */
+      /** Detected from the person's prompts while the mode is Auto; kept in the store too. */
       language: ContextBarLanguage
+      /** Picked with the pane's buttons or `/context-bar lang`; kept in the store too. */
+      languageMode: ContextBarLanguageMode
       /** The category the detail pane shows, `*` for all of them; null when closed. */
       selected: string | null
     }

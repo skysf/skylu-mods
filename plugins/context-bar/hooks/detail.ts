@@ -21,10 +21,16 @@ import { aboutTool } from './tool-notes'
 /** What the pane shows for every category at once. */
 export const ALL = '*'
 
-const BAR_CELLS = 10
 const MAX_ROWS = 200
-/** Cells before a row's label: the bar, the tokens, two spaces. */
-export const LABEL_COLUMN = BAR_CELLS + 7 + 2
+const TOKEN_CELLS = 7
+
+/** A row's bar, in cells: shorter in a narrow pane so the labels keep room. */
+function barCellsFor(width: number): number {
+  return width >= 56 ? 10 : width >= 40 ? 6 : 4
+}
+
+/** A row to lay out; `isBarless` rows (the overview's free space) get no bar. */
+type LayoutItem = ContextBarItem & { isBarless?: boolean }
 
 export type DetailRow = {
   key: string
@@ -53,10 +59,12 @@ export type DetailView = {
   notes: string[]
   /**
    * Where the rows' `about` goes: beside the label, in a column `nameWidth`
-   * cells after LABEL_COLUMN, when every one fits there; else under the label.
+   * cells after `labelColumn`, when every one fits there; else under the label.
    */
   aboutPlacement: 'inline' | 'below'
   nameWidth: number
+  /** Cells before a row's label: the bar, the tokens, two spaces. */
+  labelColumn: number
 }
 
 export type DetailInput = {
@@ -84,7 +92,8 @@ export function detailView(input: DetailInput): DetailView {
 }
 
 function overview(snapshot: ContextBarSnapshot, width: number, text: Strings): DetailView {
-  const items = ordered(snapshot.categories).map(c => ({ name: c.name, tokens: c.tokens }))
+  // Bars against the largest used category: the free space would dwarf them all.
+  const items = ordered(snapshot.categories).map(c => ({ name: c.name, tokens: c.tokens, isBarless: c.kind !== 'used' }))
   const colors = new Map(snapshot.categories.map(c => [c.name, c.color]))
   const laid = layout(items, 'inactive', width, false, false)
   return {
@@ -168,24 +177,29 @@ export function builtinTools(
 }
 
 function layout(
-  items: readonly ContextBarItem[],
+  items: readonly LayoutItem[],
   color: string,
   width: number,
   isEstimate: boolean,
   isBySize: boolean,
-): Pick<DetailView, 'rows' | 'hidden' | 'aboutPlacement' | 'nameWidth'> {
+): Pick<DetailView, 'rows' | 'hidden' | 'aboutPlacement' | 'nameWidth' | 'labelColumn'> {
   const sorted = isBySize ? [...items].sort((a, b) => b.tokens - a.tokens) : [...items]
   const shown = sorted.slice(0, MAX_ROWS)
-  const max = shown.reduce((m, i) => Math.max(m, i.tokens), 0)
-  const labelWidth = Math.max(8, width - LABEL_COLUMN)
+  const barCells = barCellsFor(width)
+  const labelColumn = barCells + TOKEN_CELLS + 2
+  const max = shown.reduce((m, i) => (i.isBarless ? m : Math.max(m, i.tokens)), 0)
+  const labelWidth = Math.max(8, width - labelColumn)
   const rows: DetailRow[] = shown.map((item, i) => {
-    const cells = max > 0 ? Math.max(item.tokens > 0 ? 1 : 0, Math.round((item.tokens / max) * BAR_CELLS)) : 0
+    const cells =
+      item.isBarless || max <= 0
+        ? 0
+        : Math.max(item.tokens > 0 ? 1 : 0, Math.min(barCells, Math.round((item.tokens / max) * barCells)))
     const label = item.note ? shortPath(item.name) + '  ' + item.note : shortPath(item.name)
     return {
       key: 'row-' + i,
       name: item.name,
-      bar: '█'.repeat(cells).padEnd(BAR_CELLS),
-      tokens: ((isEstimate ? '≈' : '') + compactCount(item.tokens)).padStart(7),
+      bar: '█'.repeat(cells).padEnd(barCells),
+      tokens: ((isEstimate ? '≈' : '') + compactCount(item.tokens)).padStart(TOKEN_CELLS),
       label: truncateMiddle(label, labelWidth),
       color,
       about: item.about,
@@ -195,7 +209,7 @@ function layout(
   // Beside the names when every line fits there, in one column; else each
   // under its name, as wide as the label column allows.
   const nameWidth = rows.reduce((m, r) => Math.max(m, cellWidth(r.label)), 0)
-  const room = width - LABEL_COLUMN - nameWidth - 2
+  const room = width - labelColumn - nameWidth - 2
   const isInline = rows.every(r => r.about === undefined || cellWidth(r.about) <= room)
   return {
     rows: isInline
@@ -204,6 +218,7 @@ function layout(
     hidden: sorted.length - shown.length,
     aboutPlacement: isInline ? 'inline' : 'below',
     nameWidth,
+    labelColumn,
   }
 }
 

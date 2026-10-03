@@ -10,11 +10,11 @@ Context Bar 是 [skylu](https://www.skylu.ai) 做的 Claude Code 插件，完全
 
 - **Claude Code's context figures**, the same breakdown `/context` shows, including the paths of memory files (such as `CLAUDE.md`) and the names and sizes of skills, agents and tools. <br> **Claude Code 的上下文统计**，和 `/context` 显示的是同一份，包括记忆文件（比如 `CLAUDE.md`）的路径，以及 skills、agents、工具的名字和大小。
 - **The descriptions of Claude Code's built-in tools**, to estimate their size. <br> **Claude Code 内置工具的说明**，用来估算它们的大小。
-- **The text of the prompts you send**, only to tell whether you write in Chinese. The text is looked at in memory and dropped right away. <br> **你发出的消息文字**，只用来判断你是不是在写中文。文字只在内存里看一眼，随即丢弃。
+- **The text of the prompts you send**, only while the language is set to Auto (the default), to tell which language you write in. The text is looked at in memory and dropped right away. When you pick a language, prompts are not read at all. <br> **你发出的消息文字**，仅在语言设为「自动」（默认）时读取，只用来判断你用的是哪种语言。文字只在内存里看一眼，随即丢弃。你选定某种语言后，就完全不读消息。
 
 ## What it keeps · 保存什么
 
-- **Two settings**, in Claude Code's plugin store on your computer: whether the bar is shown, and the language the panel is written in (Chinese or English). Neither identifies you. <br> **两项设置**，存在你电脑上 Claude Code 的插件存储里：是否显示横条，以及面板用中文还是英文。这两项都不能识别你的身份。
+- **Three settings**, in Claude Code's plugin store on your computer: whether the bar is shown, the language you picked for the panel (or Auto), and under Auto the language last detected. None of them identifies you. <br> **三项设置**，存在你电脑上 Claude Code 的插件存储里：是否显示横条、你给面板选的语言（或「自动」）、「自动」时最近判断出的语言。这几项都不能识别你的身份。
 - **While a session runs**, the latest context figures and tool sizes, held by Claude Code for that session to draw the bar and the panel. <br> **会话进行期间**，最新的上下文统计和工具大小由 Claude Code 为这个会话保存，用来画横条和面板。
 
 ## What it never does · 绝不做什么

@@ -26,7 +26,7 @@ Start a new Claude Code session afterwards.
 - **Details:** click a category under the bar to open a panel with what it holds: memory files, skills, MCP tools, built-in tools with a line on what each one is, and how the last request used the prompt cache. Click the total (`42.7k/1M (4%)`) or `+N` to see every category. Click the same entry again, or press Esc, to close the panel. <br> **明细：**点击横条下面的分类，会打开面板显示这一类里有什么：记忆文件、skills、MCP 工具、内置工具（每个工具附一句说明），以及上一次请求的缓存情况。点击总数或 `+N` 可以看全部分类。再点一次同一项或按 Esc 关闭面板。
 - **Clicking** works in Claude Code's fullscreen mode. Otherwise press `ctrl+x tab` to move the focus to the bar and pick an entry with the keyboard. <br> **鼠标点击**需要 Claude Code 的全屏模式；不是全屏时，按 `ctrl+x tab` 把焦点移到横条上，再用键盘选择。
 - **`/context-bar`** turns the bar off and on; `/context-bar on` and `/context-bar off` set it. The choice is remembered. <br> **`/context-bar`** 开关横条，`/context-bar on` 和 `/context-bar off` 直接设定，选择会被记住。
-- **Language:** the panel follows the language you write in: Chinese when you write Chinese, English otherwise. <br> **语言：**面板跟随你输入的语言：你写中文就显示中文，其余语言显示英文。
+- **Language:** the panel speaks English, 中文, 日本語, 한국어, Français, Español, Deutsch and Português. Pick one with the buttons at the foot of the panel or `/context-bar lang <code>` (`en`, `zh`, `ja`, `ko`, `fr`, `es`, `de`, `pt`); **Auto**, the default, follows the language you write in. The choice is remembered. <br> **语言：**面板支持 English、中文、日本語、한국어、Français、Español、Deutsch、Português。用面板底部的按钮或 `/context-bar lang <代码>` 选一种；默认的**自动**跟随你输入的语言。选择会被记住。
 
 ## What the numbers are · 数字说明
 
@@ -35,9 +35,9 @@ Start a new Claude Code session afterwards.
 
 ## Privacy · 隐私
 
-Context Bar runs inside Claude Code's plugin runtime. It reads Claude Code's own context figures and tool descriptions, and the text of the prompts you send, only to tell whether you write in Chinese; it keeps nothing of that text. It stores two settings in Claude Code's local plugin store: whether the bar is shown, and your language. It never reads your files, never runs commands, and never sends anything over the network.
+Context Bar runs inside Claude Code's plugin runtime. It reads Claude Code's own context figures and tool descriptions; while the language is set to Auto, it also reads the text of the prompts you send, only to tell which language you write in, and keeps nothing of that text. It stores three settings in Claude Code's local plugin store: whether the bar is shown, the language you picked (or Auto), and the language last detected. It never reads your files, never runs commands, and never sends anything over the network.
 
-Context Bar 运行在 Claude Code 的插件环境里。它读取 Claude Code 自己的上下文统计和工具说明；也会读取你发出的消息文字，但只用来判断你是不是在写中文，不保留任何内容。它在 Claude Code 本地的插件存储里记两项设置：是否显示横条、你的语言。它不读你的文件，不执行命令，也不通过网络发送任何数据。
+Context Bar 运行在 Claude Code 的插件环境里。它读取 Claude Code 自己的上下文统计和工具说明；语言设为「自动」时，还会读取你发出的消息文字，但只用来判断你用的是哪种语言，不保留任何内容。它在 Claude Code 本地的插件存储里记三项设置：是否显示横条、你选的语言（或「自动」）、最近判断出的语言。它不读你的文件，不执行命令，也不通过网络发送任何数据。
 
 Full privacy policy · 完整隐私政策：[PRIVACY.md](PRIVACY.md)
 
@@ -51,7 +51,7 @@ Context Bar 只监听下面几个 Claude Code 事件，不修改其中任何一�
 | --- | --- |
 | `session.start` | Registers `/context-bar`, reads its two remembered settings and takes the first reading. <br> 注册 `/context-bar` 命令，读取记住的两项设置，取第一次数据。 |
 | `command.run` | Answers its own `/context-bar` only; every other command passes through untouched. <br> 只响应自己的 `/context-bar`，其他命令原样放行。 |
-| `prompt.submit` | Reads the prompt's text to tell its language; the prompt goes on unchanged and is not kept. <br> 读取你发出的消息文字来判断语言；消息原样发出，不保留。 |
+| `prompt.submit` | Under Auto only, reads the prompt's text to tell its language; the prompt goes on unchanged and is not kept. <br> 仅在「自动」语言下读取你发出的消息文字来判断语言；消息原样发出，不保留。 |
 | `tool.describe` | Measures the length of each built-in tool's description; the description reaches the model unchanged. <br> 量每个内置工具说明的长度；说明原样交给模型，不做修改。 |
 | `session.measure`, `tool.call`, `session.compact`, `session.end` | Schedules a fresh reading of the context figures, nothing else. <br> 只用来安排刷新上下文数据，不做别的。 |
 | `ui.close` | Notes that its own panel was closed. <br> 记录自己的面板已关闭。 |
