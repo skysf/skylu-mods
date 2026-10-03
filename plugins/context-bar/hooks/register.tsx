@@ -216,7 +216,7 @@ export const register: Register = on => {
             <Text color={item.color}>{item.glyph}</Text>,
             <Text>{' '}</Text>,
             <Button
-              key={`cat:${item.name}`}
+              key={'cat:' + item.name}
               label={item.label}
               plain
               dimColor
@@ -225,7 +225,7 @@ export const register: Register = on => {
           ])}
           {line.hidden > 0 && [
             <Text>{' '}</Text>,
-            <Button key="more" label={`+${line.hidden}`} plain dimColor onPress={() => showDetail($, ALL)} />,
+            <Button key="more" label={'+' + line.hidden} plain dimColor onPress={() => showDetail($, ALL)} />,
           ]}
         </Box>
       </Box>
@@ -253,7 +253,7 @@ export const register: Register = on => {
         <Box flexDirection="row">
           <Text color={view.color}>{'█ '}</Text>
           <Text bold>{view.title}</Text>
-          <Text dimColor>{`  ${view.headline}`}</Text>
+          <Text dimColor>{'  ' + view.headline}</Text>
         </Box>
         <Box flexDirection="column" marginTop={1}>
           {view.rows.map(row => {
@@ -263,7 +263,7 @@ export const register: Register = on => {
               target === undefined ? (
                 <Text dimColor={about === undefined}>{row.label}</Text>
               ) : (
-                <Button key={`open:${target}`} label={row.label} plain onPress={() => showDetail($, target)} />
+                <Button key={'open:' + target} label={row.label} plain onPress={() => showDetail($, target)} />
               )
             return [
               <Box flexDirection="row">
@@ -277,7 +277,7 @@ export const register: Register = on => {
                 ) : (
                   label
                 )}
-                {about !== undefined && view.aboutPlacement === 'inline' && <Text dimColor>{`  ${about}`}</Text>}
+                {about !== undefined && view.aboutPlacement === 'inline' && <Text dimColor>{'  ' + about}</Text>}
               </Box>,
               about !== undefined && view.aboutPlacement === 'below' && (
                 <Box marginLeft={LABEL_COLUMN}>
@@ -286,7 +286,7 @@ export const register: Register = on => {
               ),
             ]
           })}
-          {view.hidden > 0 && <Text dimColor>{`… ${view.hidden} more`}</Text>}
+          {view.hidden > 0 && <Text dimColor>{TEXT[lang].more(view.hidden)}</Text>}
         </Box>
         {view.notes.length > 0 && (
           <Box flexDirection="column" marginTop={1}>

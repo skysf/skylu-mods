@@ -49,6 +49,12 @@ claude plugin marketplace remove skylu   # also remove the marketplace · 连市
 - The mods here use Claude Code's mod API, which is in early access and may change between releases. <br> 这里的 mod 用的是 Claude Code 还在早期预览阶段的 mod 接口，可能随版本变化。
 - Organizations that restrict third-party plugins may not allow installing them. <br> 限制第三方插件的组织环境可能无法安装。
 
+## Development · 开发
+
+Run `scripts/check.sh` before every release. It runs Claude Code's validation and every plugin's tests, and catches what the plugin directory's scan would hold for a reviewer.
+
+每次发布前运行 `scripts/check.sh`：它会跑 Claude Code 的格式校验和每个插件的测试，并提前发现官方目录扫描会卡住的写法。
+
 ## License · 许可证
 
 [MIT](LICENSE) © [skylu](https://www.skylu.ai)

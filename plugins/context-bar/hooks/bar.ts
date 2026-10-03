@@ -54,11 +54,19 @@ export function allocate(categories: readonly ContextBarCategory[], width: numbe
 export function compactCount(n: number): string {
   const scaled = (v: number, unit: string) => {
     const text = v >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString()
-    return `${text}${unit}`
+    return text + unit
   }
   if (n >= 1_000_000) return scaled(n / 1_000_000, 'M')
   if (n >= 1_000) return scaled(n / 1_000, 'k')
   return Math.round(n).toString()
+}
+
+/** The fill as the band and the overview show it: `42.7k/1M (4%)`. */
+export function fillSummary(snapshot: ContextBarSnapshot): string {
+  return (
+    compactCount(snapshot.totalTokens) + '/' + compactCount(snapshot.maxTokens) +
+    ' (' + Math.round(snapshot.percentage) + '%)'
+  )
 }
 
 export type LegendItem = { name: string; glyph: string; color: string; label: string }
@@ -71,15 +79,15 @@ export function legend(
   snapshot: ContextBarSnapshot,
   width: number,
 ): { summary: string; items: LegendItem[]; hidden: number } {
-  const summary = `${compactCount(snapshot.totalTokens)}/${compactCount(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`
+  const summary = fillSummary(snapshot)
   const all = ordered(snapshot.categories)
   const items: LegendItem[] = []
   let used = summary.length
   for (const [i, c] of all.entries()) {
-    const label = `${c.name} ${compactCount(c.tokens)}`
+    const label = c.name + ' ' + compactCount(c.tokens)
     const cost = 2 + 2 + label.length // "  " + glyph + " " + label
     const left = all.length - i - 1
-    const reserve = left > 0 ? ` +${left}`.length : 0
+    const reserve = left > 0 ? (' +' + left).length : 0
     if (used + cost + reserve > width) break
     items.push({ name: c.name, glyph: glyphFor(c.kind), color: c.color, label })
     used += cost

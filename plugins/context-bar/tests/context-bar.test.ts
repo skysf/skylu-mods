@@ -141,7 +141,7 @@ describe('legend', () => {
       const length =
         line.summary.length +
         line.items.reduce((sum, i) => sum + 2 + i.glyph.length + 1 + i.label.length, 0) +
-        (line.hidden > 0 ? ` +${line.hidden}`.length : 0)
+        (line.hidden > 0 ? (' +' + line.hidden).length : 0)
       expect(length).toBeLessThanOrEqual(width)
       expect(line.items.length + line.hidden).toBe(CATEGORIES.length)
     }
@@ -282,8 +282,8 @@ describe('tool notes', () => {
   test('every written note, in both languages, fits beside the names in a 68-column pane', () => {
     for (const [name, note] of Object.entries(TOOL_NOTES)) {
       for (const language of ['zh', 'en'] as const) {
-        expect(note[language].trim(), `${name} (${language}) is empty`).not.toBe('')
-        expect(cellWidth(note[language]), `${name} (${language}): ${note[language]}`).toBeLessThanOrEqual(32)
+        expect(note[language].trim(), name + ' (' + language + ') is empty').not.toBe('')
+        expect(cellWidth(note[language]), name + ' (' + language + '): ' + note[language]).toBeLessThanOrEqual(32)
       }
     }
   })
@@ -337,8 +337,8 @@ describe('the person\'s language', () => {
   })
 
   test('a Chinese question over a pasted English log is not English', () => {
-    const log = Array.from({ length: 40 }, (_, i) => `Error at line ${i} in module loader`).join('\n')
-    expect(detectLanguage(`这个报错怎么回事\n${log}`)).toBeUndefined()
+    const log = Array.from({ length: 40 }, (_, i) => 'Error at line ' + i + ' in module loader').join('\n')
+    expect(detectLanguage('这个报错怎么回事\n' + log)).toBeUndefined()
   })
 
   test('both languages have every line', () => {
@@ -347,7 +347,7 @@ describe('the person\'s language', () => {
 })
 
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(`${surface}: draws the bar in the categories' colors, and /context-bar hides it`, async ($, on) => {
+  test(surface + ": draws the bar in the categories' colors, and /context-bar hides it", async ($, on) => {
     mock.store(on)
     on('session.usage', () => ({ value: USAGE }))
     // The engine draws nothing of its own in the band.
@@ -383,7 +383,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
 }
 
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(`${surface}: pressing a legend entry opens its detail pane, pressing it again closes it`, async ($, on) => {
+  test(surface + ': pressing a legend entry opens its detail pane, pressing it again closes it', async ($, on) => {
     mock.store(on)
     on('session.usage', () => ({ value: USAGE }))
     // The engine describing its tools, as it does before the first request.
@@ -392,7 +392,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     const opened: string[] = []
     const closed: string[] = []
     on('ui.open', ($, e) => {
-      opened.push(`${e.id}|${e.title ?? ''}`)
+      opened.push(e.id + '|' + (e.title ?? ''))
       return { value: { isPlaced: true as const } }
     })
     on('ui.close', ($, e) => {
@@ -440,7 +440,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
 }
 
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(`${surface}: the pane follows the language of the person's prompts`, async ($, on) => {
+  test(surface + ": the pane follows the language of the person's prompts", async ($, on) => {
     mock.store(on)
     on('session.usage', () => ({ value: USAGE }))
     on('tool.describe', ($, e) => ({ description: e.description }))
