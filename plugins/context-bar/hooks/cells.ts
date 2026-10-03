@@ -37,7 +37,7 @@ export function truncateEnd(text: string, max: number): string {
     out += ch
     used += w
   }
-  return `${out}…`
+  return out + '…'
 }
 
 /** Keeps both ends, `…` in the middle: `~/a/b…/CLAUDE.md`, at most `max` cells. */
@@ -64,5 +64,5 @@ export function truncateMiddle(text: string, max: number): string {
     tail = ch + tail
     used += w
   }
-  return `${head}…${tail}`
+  return head + '…' + tail
 }
