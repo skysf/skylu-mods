@@ -13,7 +13,7 @@ import type {
   ContextBarSnapshot,
   ContextBarToolSize,
 } from '../types'
-import { compactCount, ordered } from './bar'
+import { compactCount, fillSummary, ordered } from './bar'
 import { cellWidth, truncateEnd, truncateMiddle } from './cells'
 import { TEXT, type Strings } from './i18n'
 import { aboutTool } from './tool-notes'
@@ -91,7 +91,7 @@ function overview(snapshot: ContextBarSnapshot, width: number, text: Strings): D
     ...laid,
     title: text.allCategories,
     color: 'inactive',
-    headline: `${compactCount(snapshot.totalTokens)}/${compactCount(snapshot.maxTokens)} (${Math.round(snapshot.percentage)}%)`,
+    headline: fillSummary(snapshot),
     rows: laid.rows.map(r => ({ ...r, color: colors.get(r.name) ?? r.color, opens: r.name })),
     notes: [text.pressCategory],
   }
@@ -180,12 +180,12 @@ function layout(
   const labelWidth = Math.max(8, width - LABEL_COLUMN)
   const rows: DetailRow[] = shown.map((item, i) => {
     const cells = max > 0 ? Math.max(item.tokens > 0 ? 1 : 0, Math.round((item.tokens / max) * BAR_CELLS)) : 0
-    const label = item.note ? `${shortPath(item.name)}  ${item.note}` : shortPath(item.name)
+    const label = item.note ? shortPath(item.name) + '  ' + item.note : shortPath(item.name)
     return {
-      key: `row-${i}`,
+      key: 'row-' + i,
       name: item.name,
       bar: '█'.repeat(cells).padEnd(BAR_CELLS),
-      tokens: `${isEstimate ? '≈' : ''}${compactCount(item.tokens)}`.padStart(7),
+      tokens: ((isEstimate ? '≈' : '') + compactCount(item.tokens)).padStart(7),
       label: truncateMiddle(label, labelWidth),
       color,
       about: item.about,
@@ -210,7 +210,7 @@ function layout(
 function share(tokens: number, max: number): string {
   if (max <= 0) return '0%'
   const pct = (tokens / max) * 100
-  return `${pct >= 10 ? Math.round(pct) : Math.round(pct * 10) / 10}%`
+  return (pct >= 10 ? Math.round(pct) : Math.round(pct * 10) / 10) + '%'
 }
 
 /** `/Users/me/x/CLAUDE.md` → `~/x/CLAUDE.md`. */
@@ -221,5 +221,5 @@ export function shortPath(name: string): string {
 /** The pane's tab title for what it shows. */
 export function titleFor(selected: string, categories: readonly ContextBarCategory[]): string {
   if (selected === ALL) return 'Context'
-  return categories.some(c => c.name === selected) ? `Context · ${selected}` : 'Context'
+  return categories.some(c => c.name === selected) ? 'Context · ' + selected : 'Context'
 }
